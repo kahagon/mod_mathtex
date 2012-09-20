@@ -1,0 +1,59 @@
+#                                               -*- Autoconf -*-
+# Process this file with autoconf to produce a configure script.
+
+AC_PREREQ([2.68])
+AC_INIT([mod_mathtex], [0.0.1], [oasynnoum@gmail.com])
+AC_CONFIG_SRCDIR([mod_mathtex.c])
+AC_CONFIG_HEADERS([config.h])
+
+# Checks for programs.
+AC_PROG_CC
+AC_PROG_INSTALL
+
+AC_CHECK_PROG([HAVE_APXS], [apxs], [yes], [no])
+if test "$HAVE_APXS" = "yes"; then
+    APXS="apxs"
+else
+    AC_CHECK_PROG([HAVE_APXS2], [apxs2], [yes], [no])
+    if test "$HAVE_APXS2" = "yes"; then
+        APXS="apxs2"
+    else
+        AC_MSG_ERROR([apxs is NOT found.])
+    fi
+fi
+
+AC_CHECK_PROG([HAVE_APACHECTL], [apachectl], [yes], [no])
+if test "$HAVE_APACHECTL" = "yes"; then
+    APACHECTL="apachectl"
+else
+    AC_MSG_ERROR([apachectl is NOT found.])
+fi
+
+EXP_INSTALLBUILDDIR=`$APXS -q exp_installbuilddir`
+TOP_BUILDDIR="${EXP_INSTALLBUILDDIR}/../"
+TOP_SRCDIR=$TOP_BUILDDIR
+
+body="top_srcdir=$TOP_SRCDIR
+top_builddir=$TOP_BUILDDIR
+APXS=$APXS
+APACHECTL=$APACHECTL"
+echo "$body" > definition.mk
+
+
+# Checks for libraries.
+# FIXME: Replace `main' with a function in `-lapreq2':
+AC_CHECK_LIB([apreq2], [main])
+
+# Checks for header files.
+AC_CHECK_HEADERS([fcntl.h limits.h stdlib.h string.h unistd.h])
+
+# Checks for typedefs, structures, and compiler characteristics.
+AC_TYPE_PID_T
+
+# Checks for library functions.
+AC_FUNC_FORK
+AC_FUNC_LSTAT_FOLLOWS_SLASHED_SYMLINK
+AC_FUNC_STRTOD
+AC_CHECK_FUNCS([alarm memmove memset mkdir strchr strcspn strncasecmp strspn strstr])
+
+AC_OUTPUT
