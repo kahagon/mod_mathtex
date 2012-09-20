@@ -633,15 +633,20 @@ mathtex_object_t *mathtex_object_ctor(request_rec *r) {
     mathtex_config_t *conf = (mathtex_config_t *)ap_get_module_config(r->server->module_config, &mathtex_module);
     char *query = NULL;
     apr_table_t *query_table = apr_table_make(r->pool, 1);
-    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "r->args: %s", r->args);
+    ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, "r->args: %s", r->args);
     if (r->args == NULL) {
-        r->args = apr_pstrcat(r->pool, conf->textarea, "=\\png\\advertisement", NULL);
+        r->args = apr_pstrcat(r->pool, conf->textarea, "=\\advertisement", NULL);
     }
     apr_status_t statcode = apreq_parse_query_string(r->pool, query_table, r->args);
     if (statcode == APR_SUCCESS && !apr_is_empty_table(query_table)) {
         query = apr_table_get(query_table, conf->textarea);
     }
-    ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "query: %s", query);
+    
+    ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, "query: %s, strlen(query): %d", query, strlen(query));
+    if (query == NULL || strlen(query) < 1) {
+        query = apr_pstrcat(r->pool, conf->textarea, "=\\advertisement", NULL);
+    }
+    ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, "query: %s, strlen(query): %d", query, strlen(query));
     
     mathtex_object_t *o = apr_pcalloc(r->pool, sizeof(mathtex_object_t));
     o->conf = conf;
