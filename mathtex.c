@@ -631,27 +631,10 @@ static STORE mathtexstore[MAXSTORE] = {
 
 mathtex_object_t *mathtex_object_ctor(request_rec *r) {
     mathtex_config_t *conf = (mathtex_config_t *)ap_get_module_config(r->server->module_config, &mathtex_module);
-    char *query = NULL;
-    apr_table_t *query_table = apr_table_make(r->pool, 1);
-    ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, "r->args: %s", r->args);
-    if (r->args == NULL) {
-        r->args = apr_pstrcat(r->pool, conf->textarea, "=\\advertisement", NULL);
-    }
-    apr_status_t statcode = apreq_parse_query_string(r->pool, query_table, r->args);
-    if (statcode == APR_SUCCESS && !apr_is_empty_table(query_table)) {
-        query = apr_table_get(query_table, conf->textarea);
-    }
-    
-    ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, "query: %s, strlen(query): %d", query, strlen(query));
-    if (query == NULL || strlen(query) < 1) {
-        query = apr_pstrcat(r->pool, conf->textarea, "=\\advertisement", NULL);
-    }
-    ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, "query: %s, strlen(query): %d", query, strlen(query));
     
     mathtex_object_t *o = apr_pcalloc(r->pool, sizeof(mathtex_object_t));
     o->conf = conf;
     o->r = r;
-    o->query = query;
     o->imagetype = 1; // default is gif
     o->isdepth = 0;
     if (conf->latex_method != NULL && (apr_strnatcmp(conf->latex_method, "pdf") == 0 || apr_strnatcmp(conf->latex_method, "PDF") == 0) && conf->pdflatex != NULL) {
@@ -677,21 +660,41 @@ mathtex_object_t *mathtex_object_ctor(request_rec *r) {
                 conf->math_log_file_path);
     }
     
+    char *query = NULL;
+    apr_table_t *query_table = apr_table_make(r->pool, 1);
+    if (r->args == NULL) {
+        r->args = apr_pstrcat(r->pool, conf->textarea, "=\\advertisement", NULL);
+    }
+    
+    mathtex_showmsg(__FILE__, __LINE__, 2, "r->args", r->args, o);
+    apr_status_t statcode = apreq_parse_query_string(r->pool, query_table, r->args);
+    if (statcode == APR_SUCCESS && !apr_is_empty_table(query_table)) {
+        query = apr_table_get(query_table, conf->textarea);
+    }
+    
+    ap_log_rerror(APLOG_MARK, APLOG_INFO, 0, r, "query: %s, strlen(query): %d", query, strlen(query));
+    if (query == NULL || strlen(query) < 1) {
+        query = apr_pstrcat(r->pool, conf->textarea, "=\\advertisement", NULL);
+    }
+    mathtex_showmsg(__FILE__, __LINE__, 2, "query", query, o);
+    o->query = query;
+    mathtex_showmsg(__FILE__, __LINE__, 2, "mathtex_object_t", "initialized", o);
     return o;
 }
 
 void mathtex_object_dtor(mathtex_object_t *o) {
+    mathtex_showmsg(__FILE__, __LINE__, 2, "mathtex_object_t", "destroy", o);
     if (o->math_log_file != NULL) fclose(o->math_log_file);
     if (o->process_log_file != NULL) fclose(o->process_log_file);
 }
 
-void mathtex_showmsg(int showlevel, char *label, char *data, mathtex_object_t *o) {
+void mathtex_showmsg(const char *file, int line, int showlevel, char *label, char *data, mathtex_object_t *o) {
     if (o->process_log_file!=NULL && o->conf->message_level >= showlevel) {
         char *format = (strlen(label)+strlen(data)<64 
-                        ? "\nmathTeX> %s: %s\n" 
-                        : "\nmathTeX> %s:\n         %s\n");
+                        ? "\n%s:%d\nmathTeX> %s: %s\n" 
+                        : "\n%s:%d\nmathTeX> %s:\n         %s\n");
         char *wrapped_data = strwrap((data),64,-9);
-        fprintf(o->process_log_file, format, label, wrapped_data);
+        fprintf(o->process_log_file, format, file, line, label, wrapped_data);
         fflush(o->process_log_file);
     }
 }
@@ -734,9 +737,10 @@ int mathtex_process(mathtex_object_t *o)
 Allocations and Declarations
 -------------------------------------------------------------------------- */
 /* --- expression to be emitted --- */
-static	char exprbuffer[MAXEXPRSZ+1] = "\000"; /* input TeX expression */
+//static	char exprbuffer[MAXEXPRSZ+1] = "\000"; /* input TeX expression */
 char	hashexpr[MAXEXPRSZ+1] = "\000";	/* usually use md5 of original expr*/
-char	*expression = exprbuffer;	/* ptr to expression */
+//char	*expression = exprbuffer;	/* ptr to expression */
+char	*expression = (char *)apr_pcalloc(o->r->pool, MAXEXPRSZ+1);
 int	isquery = 0;			/* true if input from QUERY_STRING */
 /* --- preprocess expression for special mathTeX directives, etc --- */
 char	*mathprep();			/* preprocess expression */
@@ -836,17 +840,6 @@ if ((apr_strnatcmp(conf->latex_method, "pdf") == 0 || apr_strnatcmp(conf->latex_
 /* ---
  * pre-process expression
  * ---------------------- */
-if ( !isempty(conf->textarea) )		/* if <form>'s are allowed */
- if ( isquery )				/*check for <form> on query strings*/
-  if(memcmp(expression,conf->textarea,strlen(conf->textarea))==0) { /*have form*/
-    char *delim = strchr(expression,'='); /* find = following TEXTAREANAME */
-    if ( delim != (char *)NULL )	/* found unescaped equal sign */
-      {strsqueeze(expression,((int)(delim-expression)+1));} /*squeeze name=*/
-    while ( (delim=strchr(expression,'+')) != NULL ) /*unescaped plus sign*/
-      *delim = ' ';			/* is "shorthand" for blank space */
-    unescape_url(expression);		/*convert %20, etc (twice for form)*/
-    } /* --- end-of-if(memcmp()==0) --- */
-unescape_url(expression);		/* convert %20 to blank space, etc */
 mathprep(expression, o);			/* convert &lt; to <, etc */
 validate(expression);			/* remove \input, etc */
 
@@ -1088,9 +1081,7 @@ if (getdirective(expression,"\\msglevel",1,0,1,argstring) != NULL)/*look for \ms
  * emit initial messages
  * --------------------- */
 if ( o->process_log_file!=NULL && o->conf->message_level>=1 ) {	/*copyright notice and path to image*/
-  fprintf(o->process_log_file,"%s%s\n",copyright1,copyright2); /* always show copyright */
-  mathtex_showmsg(2,"input expression",hashexpr, o); /* and input expression */
-  mathtex_showmsg(2,"input expression",hashexpr, o);
+  mathtex_showmsg(__FILE__, __LINE__, 2,"input expression",hashexpr, o); /* and input expression */
   if ( o->conf->message_level >= 8 ) {		/* and if very verbose */
     fprintf(o->process_log_file,			/* timelimit info */
       "\nmathTeX> %s timelimit: warn/killtime=%d/%d, path=%s\n",
@@ -1116,12 +1107,17 @@ if ( md5hash != NULL ) {		/* md5str() almost surely succeeded*/
       }
     }
   }
+  
+  char *cache_file_path = makepath(NULL,md5hash,extensions[o->imagetype], conf, r->pool);
+  mathtex_showmsg(__FILE__, __LINE__, 2,"cache_file_path", cache_file_path, o);
+  mathtex_showmsg(__FILE__, __LINE__, 2,"isquery", isquery ? "1" : "0", o);
+  mathtex_showmsg(__FILE__, __LINE__, 2,"iscaching", iscaching ? "1" : "0", o);
   /* ---
    * emit cached image if it already exists
    * -------------------------------------- */
   if ( isquery )			/* re-render if running from shell */
     if ( iscaching )			/* or if not caching image */
-      if(emitcache(makepath(NULL,md5hash,extensions[o->imagetype], conf, r->pool),maxage,0, o) > 0)
+      if(emitcache(cache_file_path,maxage,0, o) > 0)
         goto end_of_job;		/* done if cached image emitted */
   /* ---
    * first log caching request for new image
@@ -1134,20 +1130,21 @@ if ( md5hash != NULL ) {		/* md5str() almost surely succeeded*/
    * now generate the new image and emit it
    * -------------------------------------- */
   /* --- mathtex() generates the image and saves it to file --- */
-    r;
-    conf;
   //if ( mathtex(expression, md5hash, latexmethod, imagemethod, &isdepth, r, conf)	/* generate new image */
   if ( mathtex(expression, md5hash, o)	/* generate new image */
   ==   o->imagetype ) {			/* and emit cache if succeeded */
     nbytes = 999;			/* signal rewritecache() success */
     /* --- rewrite dvipng or convert cachefile with extra imageinfo --- */
-    if ( o->isdepth ) nbytes =		/* we have extra imageinfo */
-      rewritecache(makepath(NULL,md5hash,extensions[o->imagetype], conf, r->pool),maxage, o);
+    if ( o->isdepth ) {/* we have extra imageinfo */
+        nbytes = rewritecache(cache_file_path,maxage, o);
+    }
     /* --- emit the newly-generated image --- */
-    if ( nbytes > 0 )			/* mathtex() and rewritecache() ok */
-     if ( isquery )			/* don't emit cache to shell stdout*/
-      emitcache(makepath(NULL,md5hash,extensions[o->imagetype], conf, r->pool),maxage,0, o); }
-  else {				/* latex failed to run */
+    /* mathtex() and rewritecache() ok, and don't emit cache to shell stdout */
+    if (nbytes > 0 && isquery) {
+        emitcache(cache_file_path,maxage,0, o);
+    }
+      
+  } else {				/* latex failed to run */
     /* --- failed, so emit the embedded image of an error message --- */
     o->isdepth = 0;			/* no imageinfo in embedded images */
     if ( msgnumber < 1 ) msgnumber = 2;	/* general failure message */
@@ -1157,10 +1154,10 @@ if ( md5hash != NULL ) {		/* md5str() almost surely succeeded*/
    * ------------------------------ */
   if ( !iscaching )			/* don't want this image cached */
     if ( isempty(outfile) )		/* unless explicit outfile provided*/
-      remove(makepath(NULL,md5hash,extensions[o->imagetype], conf, r->pool)); /* remove file */
+      remove(cache_file_path); /* remove file */
   } /* --- end-of-if(md5hash!=NULL) --- */
 end_of_job:
-          mathtex_showmsg(10, "methtex_process:", "exit", o);
+          mathtex_showmsg(__FILE__, __LINE__, 10, "methtex_process", "exit", o);
 }
 
 
@@ -1233,8 +1230,7 @@ msgnumber = 0;				/* no error to report yet */
 //tempdir = apr_pstrdup(r->pool, filename);
 tempdir = apr_pstrcat(r->pool, conf->home_dir, DIRECTORY_SEPARATOR, filename, NULL);
 /* --- additional message --- */
-mathtex_showmsg(9,"working directory",tempdir, o); /* working directory */
-mathtex_showmsg(9,"working directory",tempdir, o); 
+mathtex_showmsg(__FILE__, __LINE__, 9,"working directory",tempdir, o); /* working directory */
 if ( !isdexists(tempdir/*filename*/, r) )	/* if temp directory doesn't exist */
   if ( mkdir(tempdir/*filename*/,perm_all) /* make temp dirextory */
   !=   0 ) {				/* mkdir failed */
@@ -1344,7 +1340,7 @@ if ( isquiet > 0 ) {			/* to continue after latex error */
     strcat(command," < reply.txt"); }	/*by redirecting stdin to reply.txt*/
   else strcat(command," < /dev/null");	/* or redirect stdin to /dev/null */
 strcat(command," >latex.out 2>latex.err"); /* redirect stdout and stderr */
-mathtex_showmsg(5,"latex command executed",command, o); /* show latex command executed*/
+mathtex_showmsg(__FILE__, __LINE__, 5,"latex command executed",command, o); /* show latex command executed*/
 ap_log_rerror(APLOG_MARK, APLOG_WARNING, 0, r, "latex command executed: %s", command);
 /* --- execute the latex file --- */
 sys_stat = timelimit(command,killtime);	/* throttle the latex command */
@@ -1411,7 +1407,7 @@ if ( isempty(outfile) )			/* using default output filename */
   strcat(giffile,makepath(NULL,filename,extensions[o->imagetype], conf, r->pool));
 else					/* have an explicit output file */
   strcat(giffile,makepath("",outfile,extensions[o->imagetype], conf, r->pool));
-mathtex_showmsg(3,"output image file",giffile+gifpathlen, o); /* show output filename */
+mathtex_showmsg(__FILE__, __LINE__, 3,"output image file",giffile+gifpathlen, o); /* show output filename */
 /* -------------------------------------------------------------------------
 Run dvipng for .dvi-to-gif/png
 -------------------------------------------------------------------------- */
@@ -1438,7 +1434,7 @@ if ( o->imagemethod == 1 ) {		/*dvipng method requested (default)*/
   strcat(command,makepath("","latex",".dvi", conf, r->pool)); /* run dvipng on latex.dvi */
   strcat(command," >dvipng.out 2>dvipng.err"); /* redirect stdout, stderr */
   ap_log_rerror(APLOG_MARK, APLOG_DEBUG, 0, r, "command: %s", command);
-  mathtex_showmsg(5,"dvipng command executed",command, o); /* dvipng command executed */
+  mathtex_showmsg(__FILE__, __LINE__, 5,"dvipng command executed",command, o); /* dvipng command executed */
   sys_stat = system(command);		/* execute the dvipng command */
   if ( sys_stat == (-1)			/* system(dvipng) failed */
   ||   !isfexists(giffile) ) {		/*or dvipng failed to create giffile*/
@@ -1469,7 +1465,7 @@ if ( o->imagemethod == 2 ) {		/* dvips/convert method requested */
     else				/*intermediate temp file for ps2epsi*/
       strcat(command,makepath("","dvitemp",".ps", conf, r->pool)); /*temp postscript file*/
     strcat(command," >dvips.out 2>dvips.err"); /* redirect stdout, stderr */
-    mathtex_showmsg(5,"dvips command executed",command, o); /* dvips command executed */
+    mathtex_showmsg(__FILE__, __LINE__, 5,"dvips command executed",command, o); /* dvips command executed */
     sys_stat = system(command);		/* execute system(dvips) */
     /* --- run ps2epsi if dvips ran without -E (for \begin{picture}) --- */
     if ( sys_stat != (-1)		/* system(dvips) succeeded */
@@ -1483,7 +1479,7 @@ if ( o->imagemethod == 2 ) {		/* dvips/convert method requested */
       strcat(command," ");		/* add a blank */
       strcat(command,makepath("","dvips",".ps", conf, r->pool)); /*dvips.ps postscript file*/
       strcat(command," >ps2epsi.out 2>ps2epsi.err");/*redirect stdout,stderr*/
-      mathtex_showmsg(5,"ps2epsi command executed",command, o); /* command executed */
+      mathtex_showmsg(__FILE__, __LINE__, 5,"ps2epsi command executed",command, o); /* command executed */
       sys_stat = system(command);	/* execute system(ps2epsi) */
       } /* --- end-of-if(ispicture) --- */
     if ( sys_stat == (-1)		/* system(dvips) failed */
@@ -1516,7 +1512,7 @@ if ( o->imagemethod == 2 ) {		/* dvips/convert method requested */
   strcat(command," ");			/* field separator */
   strcat(command,giffile);		/* followed by ../cache/filename */
   strcat(command," >convert.out 2>convert.err"); /*redirect stdout, stderr*/
-  mathtex_showmsg(5,"convert command executed",command, o); /*convert command executed*/
+  mathtex_showmsg(__FILE__, __LINE__, 5,"convert command executed",command, o); /*convert command executed*/
   sys_stat = system(command);		/* execute system(convert) command */
   if ( sys_stat == (-1)			/* system(convert) failed */
   ||   !isfexists(giffile) ) {		/* or convert didn't create giffile*/
@@ -2208,11 +2204,11 @@ if ( S_ISDIR(st_info.st_mode) ) {	/* have a directory */
         strcpy(pnext,entry->d_name);	/* add filename to path */
         status = rrmdir(nextpath, o); }	/* recurse */
     closedir(directory);		/* close directory after last file */
-    mathtex_showmsg(29,"rrmdir removing directory",path, o); /* show directory removed*/
+    mathtex_showmsg(__FILE__, __LINE__, 29,"rrmdir removing directory",path, o); /* show directory removed*/
     } /* --- end-of-if(directory!=NULL) --- */
   } /* --- end-of-if(S_ISDIR(st_info.st_mode)) --- */
 else					/* file isn't a directory */
-  mathtex_showmsg(29,"     rrmdir removing file",path, o); /* show file removed */
+  mathtex_showmsg(__FILE__, __LINE__, 29,"     rrmdir removing file",path, o); /* show file removed */
 /* -------------------------------------------------------------------------
 Remove file or directory (keep it for debugging if msglevel>=9)
 -------------------------------------------------------------------------- */
@@ -2321,8 +2317,9 @@ Allocations and Declarations
 -------------------------------------------------------------------------- */
 int	nbytes=0, readcachefile();	/* read cache file */
 FILE	*emitptr = stdout;		/* emit cachefile to stdout */
-unsigned char buffer[MAXGIFSZ+1];	/* bytes from cachefile */
-unsigned char *buffptr = buffer;	/* ptr to buffer */
+//unsigned char buffer[MAXGIFSZ+1];	/* bytes from cachefile */
+//unsigned char *buffptr = buffer;	/* ptr to buffer */
+unsigned char *buffptr = (unsigned char *)apr_pcalloc(o->r->pool, MAXGIFSZ+1);
 
 /* -------------------------------------------------------------------------
 initialization
@@ -2331,14 +2328,17 @@ initialization
 if ( emitptr == (FILE *)NULL )		/* failed to open emit file */
   goto end_of_job;			/* so return 0 bytes to caller */
 /* --- read the file if necessary --- */
+if (!isbuffer) {
+    mathtex_showmsg(__FILE__, __LINE__, 29,"cachefilepath",cachefile, o);
+}
 if ( isbuffer ) {			/* cachefile is buffer */
  buffptr = (unsigned char *)cachefile;	/* so reset buffer pointer */
- nbytes = (isbuffer<9?strlen((char *)buffptr):isbuffer); }/*determine #bytes*/
-else					/* cachefile is file name */
- if ( (nbytes = readcachefile(cachefile,buffer)) /* read the file */
- < 1 ) {				/* file not read */
+ nbytes = (isbuffer<9?strlen((char *)buffptr):isbuffer); /*determine #bytes*/
+// } else if ((nbytes = readcachefile(cachefile,buffer)) < 1 ) {
+} else if ((nbytes = readcachefile(cachefile,buffptr)) < 1 ) {
    msgnumber = EMITFAILED;		/* signal error */
-   goto end_of_job; }			/* quit if file not read */
+   goto end_of_job; /* quit if file not read */
+}
 /* --- first emit http headers if requested --- */
 if ( isdepth == 0			/* http headers not already in file*/
 && maxage >= 0 )			/* and caller wants http headers */
@@ -2750,7 +2750,7 @@ char x2c(char *what) {
  *	      o if symbol ISCOMPILETIMELIMIT is false, a stub function
  *		that just issues system(command) is compiled instead.
  * ======================================================================= */
-#if !ISCOMPILETIMELIMIT
+#if 1 //!ISCOMPILETIMELIMIT
 /* --- entry point for stub timelimit() function --- */
 int	timelimit(char *command, int killtime) {
   if ( isempty(command) )		/* no command given */
@@ -2835,14 +2835,7 @@ return status of child pid
 -------------------------------------------------------------------------- */
 if ( waitpid(pid, &status, 0) == -1 ) return(-1); /* can't get status */
 if ( 1 ) return(status);		/* return status to caller */
-#if 0					/* interpret status */
-  if ( WIFEXITED(status) )
-	return (WEXITSTATUS(status));
-  else if ( WIFSIGNALED(status) )
-	return (WTERMSIG(status) + 128);
-  else
-	return (EX_OSERR);
-#endif
+
 } /* --- end-of-function timelimit() --- */
 
 #endif /* ISCOMPILETIMELIMIT */
@@ -3282,7 +3275,7 @@ for ( isym=0; (htmlsym=symbols[isym].html)!=NULL; isym++ )
 back to caller with preprocessed expression
 -------------------------------------------------------------------------- */
 trimwhite(expression);			/*remove leading/trailing whitespace*/
-mathtex_showmsg(99,"mathprep expression",expression, o); /*show preprocessed expression*/
+mathtex_showmsg(__FILE__, __LINE__, 99,"mathprep expression",expression, o); /*show preprocessed expression*/
 end_of_job:
   return ( expression );
 } /* --- end-of-function mathprep() --- */

@@ -117,16 +117,12 @@ typedef struct mathtex_object {
     request_rec *r;
     FILE *process_log_file;
     FILE *math_log_file;
-    /*
-    apr_file_t *process_log_file;
-    apr_file_t *math_log_file;
-    //*/
 } mathtex_object_t;
 
 extern mathtex_object_t *mathtex_object_ctor(request_rec *r);
 extern void mathtex_object_dtor(mathtex_object_t *o);
 extern int mathtex_process(mathtex_object_t *o);
-extern void mathtex_showmsg(int showlevel, char *label, char *data, mathtex_object_t *o);
+extern void mathtex_showmsg(const char *file, int line, int showlevel, char *label, char *data, mathtex_object_t *o);
 
 module AP_MODULE_DECLARE_DATA mathtex_module;
 
