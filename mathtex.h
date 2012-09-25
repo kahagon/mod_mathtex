@@ -113,6 +113,7 @@ typedef struct mathtex_object {
     int latexmethod;
     int isdepth;
     char *query;
+    char *latexwrapper;
     mathtex_config_t *conf;
     request_rec *r;
     FILE *process_log_file;

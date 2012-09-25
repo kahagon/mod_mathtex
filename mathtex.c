@@ -389,110 +389,6 @@ static	char outfile[256] = "\000";	/* output file, or empty for default*/
 #endif
 
 /* ---
- * latex wrapper document template (default, isdepth=0, without depth)
- * ------------------------------------------------------------------- */
-static	char latexdefaultwrapper[MAXEXPRSZ+16384] =
-	"\\documentclass[10pt]{article}\n" /*[fleqn] omitted*/
-	"\\usepackage[latin1]{inputenc}\n"
-	"\\usepackage{amsmath}\n"
-	"\\usepackage{amsfonts}\n"
-	"\\usepackage{amssymb}\n"
-	/*"\\usepackage{bm}\n"*/	/* bold math */
-	#if defined(USEPACKAGE)		/* cc -DUSEPACKAGE=\"filename\" */
-	  #include USEPACKAGE		/* filename with \usepackage{}'s */
-	#endif				/* or anything for the preamble */
-	"%%usepackage%%\n"
-      #if 0
-        "\\def\\stackboxes#1{\\vbox{\\def\\\\{\\egroup\\hbox\\bgroup}"
-        "\\hbox\\bgroup#1\\egroup}}\n"
-        "\\def\\fparbox#1{\\fbox{\\stackboxes{#1}}}\n"
-      #endif
-	"%%%\\pagestyle{empty}\n"
-	"%%pagestyle%%\n"
-	"%%previewenviron%%\n"
-	"\\begin{document}\n"
-	/*"\\setlength{\\mathindent}{0pt}\n"*/ /* only with [fleqn] option */
-	"\\setlength{\\parindent}{0pt}\n"
-      #if 0
-	"%%%\\renewcommand{\\input}[1]"	/* don't let users \input{} */
-	"{\\mbox{[[$\\backslash$input\\{#1\\} illegal]]}}\n"
-      #endif
-	#if defined(NEWCOMMAND)		/* cc -DNEWCOMMAND=\"filename\" */
-	  #include NEWCOMMAND		/* filename with \newcommand{}'s */
-	#endif				/* or anything for the document */
-	"\\newcommand{\\amsatop}[2]{{\\genfrac{}{}{0pt}{1}{#1}{#2}}}\n"
-	"\\newcommand{\\twolines}[2]{{\\amsatop{\\mbox{#1}}{\\mbox{#2}}}}\n"
-	"\\newcommand{\\fs}{{\\eval{fs}}}\n" /* \eval{} test */
-	"%%fontsize%%\n"
-	"%%setlength%%\n"
-	"%%beginmath%% "
-	"%%expression%% \n"		/* \n in case expression contains %*/
-	" %%endmath%%\n"
-	"\\end{document}\n";
-
-/* ---
- * latex wrapper document template (optional, isdepth=1, with depth)
- * see http://www.mactextoolbox.sourceforge.net/articles/baseline.html
- * for discussion of this procedure
- * ------------------------------------------------------------------- */
-static	char latexdepthwrapper[MAXEXPRSZ+16384] =
-	"\\documentclass[10pt]{article}\n" /*[fleqn] omitted*/
-	"\\usepackage[latin1]{inputenc}\n"
-	"\\usepackage{amsmath}\n"
-	"\\usepackage{amsfonts}\n"
-	"\\usepackage{amssymb}\n"
-	"%%%\\usepackage{calc}\n"
-	#if defined(USEPACKAGE)		/* cc -DUSEPACKAGE=\"filename\" */
-	  #include USEPACKAGE		/* filename with \usepackage{}'s */
-	#endif				/* or anything for the preamble */
-	"%%usepackage%%\n"
-	#if defined(NEWCOMMAND)		/* cc -DNEWCOMMAND=\"filename\" */
-	  #include NEWCOMMAND		/* filename with \newcommand{}'s */
-	#endif				/* or anything for the document */
-	"\\newcommand{\\amsatop}[2]{{\\genfrac{}{}{0pt}{1}{#1}{#2}}}\n"
-	"\\newcommand{\\twolines}[2]{{\\amsatop{\\mbox{#1}}{\\mbox{#2}}}}\n"
-	"\\newcommand{\\fs}{{\\eval{fs}}}\n" /* \eval{} test */
-	"%%pagestyle%%\n"
-	"%%previewenviron%%\n"
-	"\\newsavebox{\\mybox}\n"
-	"\n"
-	"\\newlength{\\mywidth}\n"
-	"\\newlength{\\myheight}\n"
-	"\\newlength{\\mydepth}\n"
-	"\n"
-	/*"\\setlength{\\mathindent}{0pt}\n"*/ /* only with [fleqn] option */
-	"\\setlength{\\parindent}{0pt}\n"
-	"%%fontsize%%\n"
-	"%%setlength%%\n"
-	"\n"
-	"\\begin{lrbox}{\\mybox}\n"
-	"%%beginmath%% "
-	"%%expression%% \n"		/* \n in case expression contains %*/
-	" %%endmath%%\n"
-	"\\end{lrbox}\n"
-	"\n"
-	"\\settowidth {\\mywidth}  {\\usebox{\\mybox}}\n"
-	"\\settoheight{\\myheight} {\\usebox{\\mybox}}\n"
-	"\\settodepth {\\mydepth}  {\\usebox{\\mybox}}\n"
-	"\n"
-	"\\newwrite\\foo\n"
-	"\\immediate\\openout\\foo=\\jobname.info\n"
-	"    \\immediate\\write\\foo{depth = \\the\\mydepth}\n"
-	"    \\immediate\\write\\foo{height = \\the\\myheight}\n"
-	"    \\addtolength{\\myheight} {\\mydepth}\n"
-	"    \\immediate\\write\\foo{totalheight = \\the\\myheight}\n"
-	"    \\immediate\\write\\foo{width = \\the\\mywidth}\n"
-	"\\closeout\\foo\n"
-	"\n"
-	"\\begin{document}\n"
-	"\\usebox{\\mybox}\n"
-	"\\end{document}\n";
-/* ---
- * latex wrapper used
- * ------------------ */
-static	char *latexwrapper =		/* with or without depth */
-	( ISDEPTH? latexdepthwrapper : latexdefaultwrapper );
-/* ---
  * elements from \jobname.info to be prepended to graphics file
  * ------------------------------------------------------------ */
 #define	IMAGEINFO struct imageinfo_struct /*"typedef" for imageinfo struct*/
@@ -629,6 +525,127 @@ static STORE mathtexstore[MAXSTORE] = {
     { NULL, NULL }					/* end-of-store */
   } ; /* --- end-of-mimestore[] --- */
 
+static char *mathtex_get_latexwrapper(int isdepth, mathtex_object_t *o) {
+    
+    /* ---
+     * latex wrapper document template (default, isdepth=0, without depth)
+     * ------------------------------------------------------------------- */
+    int latexdefaultwrapper_size = MAXEXPRSZ+16384;
+    char latexdefaultwrapper[MAXEXPRSZ+16384] =
+        "\\documentclass[10pt]{article}\n" /*[fleqn] omitted*/
+        "\\usepackage[latin1]{inputenc}\n"
+        "\\usepackage{amsmath}\n"
+        "\\usepackage{amsfonts}\n"
+        "\\usepackage{amssymb}\n"
+        /*"\\usepackage{bm}\n"*/	/* bold math */
+        #if defined(USEPACKAGE)		/* cc -DUSEPACKAGE=\"filename\" */
+          #include USEPACKAGE		/* filename with \usepackage{}'s */
+        #endif				/* or anything for the preamble */
+        "%%usepackage%%\n"
+        #if 0
+        "\\def\\stackboxes#1{\\vbox{\\def\\\\{\\egroup\\hbox\\bgroup}"
+        "\\hbox\\bgroup#1\\egroup}}\n"
+        "\\def\\fparbox#1{\\fbox{\\stackboxes{#1}}}\n"
+        #endif
+        "%%%\\pagestyle{empty}\n"
+        "%%pagestyle%%\n"
+        "%%previewenviron%%\n"
+        "\\begin{document}\n"
+        /*"\\setlength{\\mathindent}{0pt}\n"*/ /* only with [fleqn] option */
+        "\\setlength{\\parindent}{0pt}\n"
+        #if 0
+        "%%%\\renewcommand{\\input}[1]"	/* don't let users \input{} */
+        "{\\mbox{[[$\\backslash$input\\{#1\\} illegal]]}}\n"
+        #endif
+        #if defined(NEWCOMMAND)		/* cc -DNEWCOMMAND=\"filename\" */
+          #include NEWCOMMAND		/* filename with \newcommand{}'s */
+        #endif				/* or anything for the document */
+        "\\newcommand{\\amsatop}[2]{{\\genfrac{}{}{0pt}{1}{#1}{#2}}}\n"
+        "\\newcommand{\\twolines}[2]{{\\amsatop{\\mbox{#1}}{\\mbox{#2}}}}\n"
+        "\\newcommand{\\fs}{{\\eval{fs}}}\n" /* \eval{} test */
+        "%%fontsize%%\n"
+        "%%setlength%%\n"
+        "%%beginmath%% "
+        "%%expression%% \n"		/* \n in case expression contains %*/
+        " %%endmath%%\n"
+        "\\end{document}\n";
+
+    /* ---
+     * latex wrapper document template (optional, isdepth=1, with depth)
+     * see http://www.mactextoolbox.sourceforge.net/articles/baseline.html
+     * for discussion of this procedure
+     * ------------------------------------------------------------------- */
+    int latexdepthwrapper_size = MAXEXPRSZ+16384;
+    char latexdepthwrapper[MAXEXPRSZ+16384] =
+        "\\documentclass[10pt]{article}\n" /*[fleqn] omitted*/
+        "\\usepackage[latin1]{inputenc}\n"
+        "\\usepackage{amsmath}\n"
+        "\\usepackage{amsfonts}\n"
+        "\\usepackage{amssymb}\n"
+        "%%%\\usepackage{calc}\n"
+        #if defined(USEPACKAGE)		/* cc -DUSEPACKAGE=\"filename\" */
+          #include USEPACKAGE		/* filename with \usepackage{}'s */
+        #endif				/* or anything for the preamble */
+        "%%usepackage%%\n"
+        #if defined(NEWCOMMAND)		/* cc -DNEWCOMMAND=\"filename\" */
+          #include NEWCOMMAND		/* filename with \newcommand{}'s */
+        #endif				/* or anything for the document */
+        "\\newcommand{\\amsatop}[2]{{\\genfrac{}{}{0pt}{1}{#1}{#2}}}\n"
+        "\\newcommand{\\twolines}[2]{{\\amsatop{\\mbox{#1}}{\\mbox{#2}}}}\n"
+        "\\newcommand{\\fs}{{\\eval{fs}}}\n" /* \eval{} test */
+        "%%pagestyle%%\n"
+        "%%previewenviron%%\n"
+        "\\newsavebox{\\mybox}\n"
+        "\n"
+        "\\newlength{\\mywidth}\n"
+        "\\newlength{\\myheight}\n"
+        "\\newlength{\\mydepth}\n"
+        "\n"
+        /*"\\setlength{\\mathindent}{0pt}\n"*/ /* only with [fleqn] option */
+        "\\setlength{\\parindent}{0pt}\n"
+        "%%fontsize%%\n"
+        "%%setlength%%\n"
+        "\n"
+        "\\begin{lrbox}{\\mybox}\n"
+        "%%beginmath%% "
+        "%%expression%% \n"		/* \n in case expression contains %*/
+        " %%endmath%%\n"
+        "\\end{lrbox}\n"
+        "\n"
+        "\\settowidth {\\mywidth}  {\\usebox{\\mybox}}\n"
+        "\\settoheight{\\myheight} {\\usebox{\\mybox}}\n"
+        "\\settodepth {\\mydepth}  {\\usebox{\\mybox}}\n"
+        "\n"
+        "\\newwrite\\foo\n"
+        "\\immediate\\openout\\foo=\\jobname.info\n"
+        "    \\immediate\\write\\foo{depth = \\the\\mydepth}\n"
+        "    \\immediate\\write\\foo{height = \\the\\myheight}\n"
+        "    \\addtolength{\\myheight} {\\mydepth}\n"
+        "    \\immediate\\write\\foo{totalheight = \\the\\myheight}\n"
+        "    \\immediate\\write\\foo{width = \\the\\mywidth}\n"
+        "\\closeout\\foo\n"
+        "\n"
+        "\\begin{document}\n"
+        "\\usebox{\\mybox}\n"
+        "\\end{document}\n";
+    
+    int latexwrapper_size;
+    char *latexwrapper;
+    switch (isdepth) {
+        case 1:
+            latexwrapper_size = latexdepthwrapper_size;
+            latexwrapper = latexdepthwrapper;
+            break;
+        case 0:
+        default:
+            latexwrapper_size = latexdefaultwrapper_size;
+            latexwrapper = latexdefaultwrapper;
+            break;
+    }
+    
+    return apr_pstrmemdup(o->r->pool, latexwrapper, latexwrapper_size);
+}
+
 mathtex_object_t *mathtex_object_ctor(request_rec *r) {
     mathtex_config_t *conf = (mathtex_config_t *)ap_get_module_config(r->server->module_config, &mathtex_module);
     
@@ -679,6 +696,9 @@ mathtex_object_t *mathtex_object_ctor(request_rec *r) {
     mathtex_showmsg(__FILE__, __LINE__, 2, "query", query, o);
     o->query = query;
     mathtex_showmsg(__FILE__, __LINE__, 2, "mathtex_object_t", "initialized", o);
+    
+    o->latexwrapper = mathtex_get_latexwrapper(o->isdepth, o);
+    
     return o;
 }
 
@@ -923,11 +943,11 @@ if ( strreplace(expression,"\\depth","",0,0) /* \depth requested */
     int ntilde = 0;			/* # ~ chars replaced */
     ntilde = strreplace(expression,"~"," ",0,0); }
   o->isdepth = 1;				/* so reset flag */
-  latexwrapper = latexdepthwrapper; }	/* and wrapper */
+  o->latexwrapper = mathtex_get_latexwrapper(o->isdepth, o); }	/* and wrapper */
 if ( strreplace(expression,"\\nodepth","",0,0) /* \nodepth requested */
 >=   1 ) {				/* found \nodepth */
   o->isdepth = 0;				/* so reset flag */
-  latexwrapper = latexdefaultwrapper; }	/* and wrapper */
+  o->latexwrapper = mathtex_get_latexwrapper(o->isdepth, o); }	/* and wrapper */
 /* --- replace \time directive with timestamp (similar to \today) --- */
 if ( strstr(expression,"\\time") != NULL ) { /* user wants a timestamp */
   strreplace(expression,"\\time",timestamp(TZDELTA,3),0,0); /* insert time */
@@ -1011,7 +1031,7 @@ if ( strreplace(expression,"\\nocache","",0,0) /* remove \nocache */
 >=   1 ) iscaching = 0;			/* don't cache this image */
 /* ---check for \eval{}'s in (1)submitted expressions, (2)\newcommand's--- */
 for ( irep=1; irep<=2; irep++ ) {	/* 1=expression, 2=latexwrapper */
-  char *thisrep = (irep==1?expression:latexwrapper); /* choose 1 or 2 */
+  char *thisrep = (irep==1?expression:o->latexwrapper); /* choose 1 or 2 */
   while ( (pdirective=getdirective(thisrep,"\\eval",1,0,1,argstring))
   !=   NULL ) {				/* found \eval{} directive */
     int  ival = (isempty(argstring)?0:evalterm(mathtexstore,argstring));
@@ -1109,16 +1129,23 @@ if ( md5hash != NULL ) {		/* md5str() almost surely succeeded*/
   }
   
   char *cache_file_path = makepath(NULL,md5hash,extensions[o->imagetype], conf, r->pool);
-  mathtex_showmsg(__FILE__, __LINE__, 2,"cache_file_path", cache_file_path, o);
-  mathtex_showmsg(__FILE__, __LINE__, 2,"isquery", isquery ? "1" : "0", o);
-  mathtex_showmsg(__FILE__, __LINE__, 2,"iscaching", iscaching ? "1" : "0", o);
+  mathtex_showmsg(__FILE__, __LINE__, 9,"cache_file_path", cache_file_path, o);
+  mathtex_showmsg(__FILE__, __LINE__, 9,"isquery", isquery ? "1" : "0", o);
+  mathtex_showmsg(__FILE__, __LINE__, 9,"iscaching", iscaching ? "1" : "0", o);
   /* ---
    * emit cached image if it already exists
    * -------------------------------------- */
-  if ( isquery )			/* re-render if running from shell */
-    if ( iscaching )			/* or if not caching image */
-      if(emitcache(cache_file_path,maxage,0, o) > 0)
-        goto end_of_job;		/* done if cached image emitted */
+    if ( isquery ) { /* re-render if running from shell */
+        if ( iscaching ) { /* or if not caching image */
+            mathtex_showmsg(__FILE__, __LINE__, 9,"mathtex_process", "do emitcache", o);
+            if(emitcache(cache_file_path,maxage,0, o) > 0) {
+                mathtex_showmsg(__FILE__, __LINE__, 9,"mathtex_process", "emitcache succeeded", o);
+                goto end_of_job;		/* done if cached image emitted */
+            } else {
+                mathtex_showmsg(__FILE__, __LINE__, 9,"mathtex_process", "emitcache failed. because of cache file does not exist.", o);
+            }
+        }
+    }
   /* ---
    * first log caching request for new image
    * --------------------------------------- */
@@ -1134,6 +1161,7 @@ if ( md5hash != NULL ) {		/* md5str() almost surely succeeded*/
   if ( mathtex(expression, md5hash, o)	/* generate new image */
   ==   o->imagetype ) {			/* and emit cache if succeeded */
     nbytes = 999;			/* signal rewritecache() success */
+    mathtex_showmsg(__FILE__, __LINE__, 9,"o->isdepth", o->isdepth ? "1" : "0", o);
     /* --- rewrite dvipng or convert cachefile with extra imageinfo --- */
     if ( o->isdepth ) {/* we have extra imageinfo */
         nbytes = rewritecache(cache_file_path,maxage, o);
@@ -1157,7 +1185,7 @@ if ( md5hash != NULL ) {		/* md5str() almost surely succeeded*/
       remove(cache_file_path); /* remove file */
   } /* --- end-of-if(md5hash!=NULL) --- */
 end_of_job:
-          mathtex_showmsg(__FILE__, __LINE__, 10, "methtex_process", "exit", o);
+          mathtex_showmsg(__FILE__, __LINE__, 9, "methtex_process", "exit", o);
 }
 
 
@@ -1263,27 +1291,27 @@ Replace "keywords" in latex template with expression and other directives
 /* --- usually replace %%pagestyle%% with \pagestyle{empty} --- */
   if ( !ispicture			/* not \begin{picture} environment */
   ||   o->latexmethod == 1 )		/* or using latex/dvips/ps2epsi */
-    strreplace(latexwrapper,"%%pagestyle%%","\\pagestyle{empty}",1,0);
+    strreplace(o->latexwrapper,"%%pagestyle%%","\\pagestyle{empty}",1,0);
 /* --- replace %%previewenviron%% if a picture and using pfdlatex --- */
   if ( ispicture			/* have \begin{picture} environment */
   &&   o->latexmethod == 2 )		/* and using pdflatex/convert */
-    strreplace(latexwrapper,"%%previewenviron%%",
+    strreplace(o->latexwrapper,"%%previewenviron%%",
     "\\PreviewEnvironment{picture}",1,0);
 /* --- replace %%beginmath%%...%%endmath%% with \[...\] or with $...$ --- */
   if ( mathmode<0 || mathmode>2 ) mathmode=0; /* mathmode validity check */
-  strreplace(latexwrapper,"%%beginmath%%",beginmath[mathmode],1,0);
-  strreplace(latexwrapper,"%%endmath%%",endmath[mathmode],1,0);
+  strreplace(o->latexwrapper,"%%beginmath%%",beginmath[mathmode],1,0);
+  strreplace(o->latexwrapper,"%%endmath%%",endmath[mathmode],1,0);
 /* --- replace %%fontsize%% in template with \tiny...\Huge --- */
-  strreplace(latexwrapper,"%%fontsize%%",sizedirectives[fontsize],1,0);
+  strreplace(o->latexwrapper,"%%fontsize%%",sizedirectives[fontsize],1,0);
 /* --- replace %%setlength%% in template for pictures when necessary --- */
   if ( ispicture			/* have \begin{picture} environment */
   &&   strstr(expression,"\\unitlength") == NULL ) /* but no \unitlength */
-    strreplace(latexwrapper,"%%setlength%%", /* so default it to 1 inch */
+    strreplace(o->latexwrapper,"%%setlength%%", /* so default it to 1 inch */
     "\\setlength{\\unitlength}{1.0in}",1,0);
 /* --- replace %%usepackage%% in template with extra \usepackage{}'s --- */
-  strreplace(latexwrapper,"%%usepackage%%",usepackage,1,0);
+  strreplace(o->latexwrapper,"%%usepackage%%",usepackage,1,0);
 /* --- replace %%expression%% in template with expression --- */
-  strreplace(latexwrapper,"%%expression%%",expression,1,0);
+  strreplace(o->latexwrapper,"%%expression%%",expression,1,0);
 /* -------------------------------------------------------------------------
 Create latex document wrapper file containing expression
 -------------------------------------------------------------------------- */
@@ -1292,7 +1320,7 @@ latexfp = fopen(latexfile,"w");		/* open latex file for write */
 if ( latexfp == NULL ) {		/* couldn't open latex file */
   msgnumber = FOPENFAILED;		/* set corresponding message number*/
   goto end_of_job; }			/* and quit */
-fprintf(latexfp,"%s",latexwrapper);	/* write file */
+fprintf(latexfp,"%s",o->latexwrapper);	/* write file */
 fclose(latexfp);			/* close file after writing it */
 /* -------------------------------------------------------------------------
 Set paths to programs we'll need to run
@@ -1923,7 +1951,7 @@ char	*makepath ( char *path, char *name, char *extension, mathtex_config_t *conf
 /* -------------------------------------------------------------------------
 Allocations and Declarations
 -------------------------------------------------------------------------- */
-static	char namebuff[512];		/* buffer for constructed filename */
+char *namebuff = apr_pcalloc(pool, 512); /* buffer for constructed filename */
 char	*filename = NULL;		/*ptr to filename returned to caller*/
 /* -------------------------------------------------------------------------
 construct filename
@@ -2235,6 +2263,7 @@ end_of_job:
 /* --- entry point --- */
 int	rewritecache ( char *cachefile, int maxage, mathtex_object_t *o)
 {
+    mathtex_showmsg(__FILE__, __LINE__, 29,"rewritecache", "entry", o);
 /* -------------------------------------------------------------------------
 Allocations and Declarations
 -------------------------------------------------------------------------- */
@@ -2246,7 +2275,7 @@ int	i = 0;				/* imageinfo[] index */
 initialization
 -------------------------------------------------------------------------- */
 /* --- read original image file --- */
-if ( (nbytes = readcachefile(cachefile,buffer)) /* read the file */
+if ( (nbytes = readcachefile(cachefile,buffer,o)) /* read the file */
 < 1 ) {					/* file not read */
   msgnumber = EMITFAILED;  goto end_of_job; } /* signal error to caller */
 /* --- re-open the file for write --- */
@@ -2280,12 +2309,15 @@ fprintf( rewriteptr, "Content-type: image/%s\n\n",extensions[o->imagetype] );
 rewrite bytes from cachefile
 -------------------------------------------------------------------------- */
 /* --- write bytes back to cachefile --- */
-if ( fwrite(buffer,sizeof(unsigned char),nbytes,rewriteptr) /*write buffer*/
-<    nbytes )				/* failed to write all bytes */
-  nbytes = 0;				/* reset total count to 0 */
+/* write buffer. failed to write all bytes */
+if (fwrite(buffer,sizeof(unsigned char),nbytes,rewriteptr) < nbytes) {
+    mathtex_showmsg(__FILE__, __LINE__, 1,"rewritecache","failed to rewrite cache", o);
+    nbytes = 0; /* reset total count to 0 */
+}
+
 end_of_job:
-  if ( rewriteptr != NULL ) fclose(rewriteptr); /* close cachefile */
-  return ( nbytes );			/* back with #bytes emitted */
+    if ( rewriteptr != NULL ) fclose(rewriteptr); /* close cachefile */
+    return ( nbytes );			/* back with #bytes emitted */
 } /* --- end-of-function rewritecache() --- */
 
 
@@ -2328,16 +2360,19 @@ initialization
 if ( emitptr == (FILE *)NULL )		/* failed to open emit file */
   goto end_of_job;			/* so return 0 bytes to caller */
 /* --- read the file if necessary --- */
-if (!isbuffer) {
-    mathtex_showmsg(__FILE__, __LINE__, 29,"cachefilepath",cachefile, o);
-}
 if ( isbuffer ) {			/* cachefile is buffer */
- buffptr = (unsigned char *)cachefile;	/* so reset buffer pointer */
- nbytes = (isbuffer<9?strlen((char *)buffptr):isbuffer); /*determine #bytes*/
+    buffptr = (unsigned char *)cachefile;	/* so reset buffer pointer */
+    nbytes = (isbuffer<9?strlen((char *)buffptr):isbuffer); /*determine #bytes*/
 // } else if ((nbytes = readcachefile(cachefile,buffer)) < 1 ) {
-} else if ((nbytes = readcachefile(cachefile,buffptr)) < 1 ) {
-   msgnumber = EMITFAILED;		/* signal error */
-   goto end_of_job; /* quit if file not read */
+} else{ 
+    mathtex_showmsg(__FILE__, __LINE__, 29,"cachefilepath",cachefile, o);
+    if ((nbytes = readcachefile(cachefile,buffptr,o)) < 1 ) {
+        mathtex_showmsg(__FILE__, __LINE__, 29,"readcachefile","failed", o);
+        msgnumber = EMITFAILED;		/* signal error */
+        goto end_of_job; /* quit if file not read */
+    } else {
+        mathtex_showmsg(__FILE__, __LINE__, 29,"readcachefile","succeeded", o);
+    }
 }
 /* --- first emit http headers if requested --- */
 if ( isdepth == 0			/* http headers not already in file*/
@@ -2368,8 +2403,9 @@ end_of_job:
  * Notes:     o
  * ======================================================================= */
 /* --- entry point --- */
-int	readcachefile ( char *cachefile, unsigned char *buffer )
+int	readcachefile ( char *cachefile, unsigned char *buffer, mathtex_object_t *o)
 {
+    mathtex_showmsg(__FILE__, __LINE__, 9,"readcachefile","entry", o);
 /* -------------------------------------------------------------------------
 Allocations and Declarations
 -------------------------------------------------------------------------- */
@@ -2383,9 +2419,20 @@ int	buflen = 256,			/* #bytes we try to read from file */
 initialization
 -------------------------------------------------------------------------- */
 /* --- check that files opened okay --- */
-if ( cacheptr == (FILE *)NULL ) goto end_of_job; /*failed to open cachefile*/
+if ( cacheptr == (FILE *)NULL ) {
+    mathtex_showmsg(__FILE__, __LINE__, 1,"readcachefile","failed to open cachefile", o);
+    char *cachefile_realpath = realpath(cachefile, NULL);
+    if (cachefile_realpath != NULL) {
+        mathtex_showmsg(__FILE__, __LINE__, 1,"realpath(cachefile)", cachefile_realpath, o);
+        free(cachefile_realpath);
+    }
+    goto end_of_job; /*failed to open cachefile*/
+}
 /* --- check that output buffer provided --- */
-if ( buffer == (unsigned char *)NULL ) goto end_of_job; /* no buffer */
+if ( buffer == (unsigned char *)NULL ) {
+    mathtex_showmsg(__FILE__, __LINE__, 1,"readcachefile","no buffer", o);
+    goto end_of_job; /* no buffer */
+}
 /* -------------------------------------------------------------------------
 read bytes from cachefile
 -------------------------------------------------------------------------- */
