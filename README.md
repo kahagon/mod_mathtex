@@ -33,7 +33,7 @@ Configuration
 You should configure to run mod_mathtex.
 
 ### loading module
-add next line to you httpd.conf or apache.conf
+add next line to your httpd.conf or apache.conf
 
     LoadModule mathtex_module /path/to/modules/mod_mathtex.so
     
