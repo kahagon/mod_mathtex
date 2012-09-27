@@ -608,6 +608,13 @@ LIBOBJS
 EGREP
 GREP
 CPP
+HAVE_TIMELIMIT
+HAVE_CONVERT
+HAVE_PS2EPSI
+HAVE_DVIPS
+HAVE_PDFLATEX
+HAVE_LATEX
+HAVE_DVIPNG
 HAVE_APACHECTL
 HAVE_APXS2
 HAVE_APXS
@@ -3173,6 +3180,352 @@ if test "$HAVE_APACHECTL" = "yes"; then
 else
     as_fn_error $? "apachectl is NOT found." "$LINENO" 5
 fi
+
+# Extract the first word of "apachectl", so it can be a program name with args.
+set dummy apachectl; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_HAVE_APACHECTL+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$HAVE_APACHECTL"; then
+  ac_cv_prog_HAVE_APACHECTL="$HAVE_APACHECTL" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_HAVE_APACHECTL="yes"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_HAVE_APACHECTL" && ac_cv_prog_HAVE_APACHECTL="no"
+fi
+fi
+HAVE_APACHECTL=$ac_cv_prog_HAVE_APACHECTL
+if test -n "$HAVE_APACHECTL"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_APACHECTL" >&5
+$as_echo "$HAVE_APACHECTL" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+if test "$HAVE_APACHECTL" = "yes"; then
+    APACHECTL="apachectl"
+else
+    as_fn_error $? "apachectl is NOT found." "$LINENO" 5
+fi
+
+# Extract the first word of "dvipng", so it can be a program name with args.
+set dummy dvipng; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_HAVE_DVIPNG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$HAVE_DVIPNG"; then
+  ac_cv_prog_HAVE_DVIPNG="$HAVE_DVIPNG" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_HAVE_DVIPNG="yes"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_HAVE_DVIPNG" && ac_cv_prog_HAVE_DVIPNG="no"
+fi
+fi
+HAVE_DVIPNG=$ac_cv_prog_HAVE_DVIPNG
+if test -n "$HAVE_DVIPNG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_DVIPNG" >&5
+$as_echo "$HAVE_DVIPNG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+if test "$HAVE_DVIPNG" = "yes"; then
+    DVIPNG="dvipng"
+else
+    as_fn_error $? "dvipng is NOT found." "$LINENO" 5
+fi
+
+# Extract the first word of "latex", so it can be a program name with args.
+set dummy latex; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_HAVE_LATEX+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$HAVE_LATEX"; then
+  ac_cv_prog_HAVE_LATEX="$HAVE_LATEX" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_HAVE_LATEX="yes"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_HAVE_LATEX" && ac_cv_prog_HAVE_LATEX="no"
+fi
+fi
+HAVE_LATEX=$ac_cv_prog_HAVE_LATEX
+if test -n "$HAVE_LATEX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_LATEX" >&5
+$as_echo "$HAVE_LATEX" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+if test "$HAVE_LATEX" = "yes"; then
+    LATEX="latex"
+fi
+
+# Extract the first word of "pdflatex", so it can be a program name with args.
+set dummy pdflatex; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_HAVE_PDFLATEX+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$HAVE_PDFLATEX"; then
+  ac_cv_prog_HAVE_PDFLATEX="$HAVE_PDFLATEX" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_HAVE_PDFLATEX="yes"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_HAVE_PDFLATEX" && ac_cv_prog_HAVE_PDFLATEX="no"
+fi
+fi
+HAVE_PDFLATEX=$ac_cv_prog_HAVE_PDFLATEX
+if test -n "$HAVE_PDFLATEX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_PDFLATEX" >&5
+$as_echo "$HAVE_PDFLATEX" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+if test "$HAVE_PDFLATEX" = "yes"; then
+    PDFLATEX="pdflatex"
+fi
+
+if test "$HAVE_PDFLATEX" != "yes" && test "$HAVE_LATEX" != "yes"; then
+    as_fn_error $? "both latex and pdflatex is NOT found." "$LINENO" 5
+fi
+
+# Extract the first word of "dvips", so it can be a program name with args.
+set dummy dvips; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_HAVE_DVIPS+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$HAVE_DVIPS"; then
+  ac_cv_prog_HAVE_DVIPS="$HAVE_DVIPS" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_HAVE_DVIPS="yes"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_HAVE_DVIPS" && ac_cv_prog_HAVE_DVIPS="no"
+fi
+fi
+HAVE_DVIPS=$ac_cv_prog_HAVE_DVIPS
+if test -n "$HAVE_DVIPS"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_DVIPS" >&5
+$as_echo "$HAVE_DVIPS" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+if test "$HAVE_DVIPS" = "yes"; then
+    DVIPS="dvips"
+fi
+
+# Extract the first word of "ps2epsi", so it can be a program name with args.
+set dummy ps2epsi; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_HAVE_PS2EPSI+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$HAVE_PS2EPSI"; then
+  ac_cv_prog_HAVE_PS2EPSI="$HAVE_PS2EPSI" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_HAVE_PS2EPSI="yes"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_HAVE_PS2EPSI" && ac_cv_prog_HAVE_PS2EPSI="no"
+fi
+fi
+HAVE_PS2EPSI=$ac_cv_prog_HAVE_PS2EPSI
+if test -n "$HAVE_PS2EPSI"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_PS2EPSI" >&5
+$as_echo "$HAVE_PS2EPSI" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+if test "$HAVE_PS2EPSI" = "yes"; then
+    PS2EPSI="ps2epsi"
+fi
+
+# Extract the first word of "convert", so it can be a program name with args.
+set dummy convert; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_HAVE_CONVERT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$HAVE_CONVERT"; then
+  ac_cv_prog_HAVE_CONVERT="$HAVE_CONVERT" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_HAVE_CONVERT="yes"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_HAVE_CONVERT" && ac_cv_prog_HAVE_CONVERT="no"
+fi
+fi
+HAVE_CONVERT=$ac_cv_prog_HAVE_CONVERT
+if test -n "$HAVE_CONVERT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_CONVERT" >&5
+$as_echo "$HAVE_CONVERT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+if test "$HAVE_CONVERT" = "yes"; then
+    CONVERT="convert"
+fi
+
+# Extract the first word of "timelimit", so it can be a program name with args.
+set dummy timelimit; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_HAVE_TIMELIMIT+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$HAVE_TIMELIMIT"; then
+  ac_cv_prog_HAVE_TIMELIMIT="$HAVE_TIMELIMIT" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_HAVE_TIMELIMIT="yes"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_HAVE_TIMELIMIT" && ac_cv_prog_HAVE_TIMELIMIT="no"
+fi
+fi
+HAVE_TIMELIMIT=$ac_cv_prog_HAVE_TIMELIMIT
+if test -n "$HAVE_TIMELIMIT"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_TIMELIMIT" >&5
+$as_echo "$HAVE_TIMELIMIT" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+if test "$HAVE_TIMELIMIT" = "yes"; then
+    TIMELIMIT="timelimit"
+fi
+
+
 
 EXP_INSTALLBUILDDIR=`$APXS -q exp_installbuilddir`
 TOP_BUILDDIR="${EXP_INSTALLBUILDDIR}/../"
