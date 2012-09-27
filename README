@@ -8,5 +8,5 @@ Differences between mathtex and mod_mathtex are below.
 
 * The configuration is separated from source code.  
 * The process of access control is delegated  to Apache.
-* Maybe mod_mathtex is faster than mathtex. (I has never been took benchmark yet)  
+* Maybe mod_mathtex is faster than mathtex. (I have never been took benchmark yet)  
   The reason is that CGI process does not start for each request because Apache child process is waiting for request.
