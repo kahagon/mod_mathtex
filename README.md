@@ -1,5 +1,5 @@
 mod_mathtex
-===========
+==============
 
 This apache module will process query string as TEX expression.
 
@@ -31,3 +31,67 @@ Install
 Configuration
 --------------
 You should configure to run mod_mathtex.
+
+### loading module
+add next line to you httpd.conf or apache.conf
+
+    LoadModule mathtex_module /path/to/modules/mod_mathtex.so
+    
+the directory path will be printed when doing ``` make install ``` .
+
+### directives
+* __Latex__  
+  path to executable  
+  you must specify this or Pdflatex directive.  
+  
+* __Pdflatex__  
+  path to executable  
+  you must specify this or Latex directive.  
+  
+* __Textarea__  
+  the key of query string value including TeX expression.
+  
+* __HomeDir__  
+  path to directory to be used by mod_mathtex.  
+  this directory permission must be able to write and read by Apache.  
+  working temporary file and cache file is saved this directory.  
+  
+* __LatexMethod__  
+  specify Latex or PDF. default value is Latex.  
+  
+* __MessageLevel__  
+  log level of mod_mathtex. default value is 1.  
+  if this level is more higher, then log will be more verbosely.  
+  
+* __Dvipng__  
+  path to executable  
+  
+* __Dvips__ (optional)  
+  path to executable  
+  
+* __Ps2epsi__ (optional)  
+  path to executable  
+  
+* __Convert__ (optional)  
+  path to executable  
+  
+* __Timelimit__ (optional)  
+  path to executable
+
+### example
+    <IfModule mod_mathtex.c>
+        Latex /usr/bin/latex 
+        Pdflatex /usr/bin/pdflatex
+        Dvipng /usr/bin/dvipng
+        Dvips /usr/bin/dvips
+        Ps2epsi /usr/bin/ps2epsi
+        Convert /usr/bin/convert
+        Timelimit /usr/bin/timelimit
+        Textarea formdata
+        HomeDir /var/tmp/mod_mathtex/
+        LatexMethod LATEX
+        MessageLevel 9 
+        <Location /mathtex>
+            SetHandler mathtex 
+        </Location>
+    </IfModule>  
