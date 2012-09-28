@@ -245,19 +245,15 @@ static const char density[256] = DPI;	/*-D/-density arg for dvipng/convert*/
  * --------------------------------------------------------------- */
 #define	DVIPNGGAMMA "2.5"		/* default gamma for dvipng */
 #define	CONVERTGAMMA "0.5"		/* default gamma for convert */
-#if !defined(GAMMA)
-  #define ISGAMMA 0			/* no -DGAMMA=\"gamma\" switch */
-  #if IMAGEMETHOD == 1			/* for dvipng... */
-    #define GAMMA DVIPNGGAMMA		/* ...default gamma is 2.5 */
-  #elif IMAGEMETHOD == 2		/* for convert... */
-    #define GAMMA CONVERTGAMMA		/* ...default gamma is 0.5 */
-  #else					/* otherwise... */
-    #define GAMMA "1.0"			/* ...default gamma is 1.0 */
-  #endif
-#else
-  #define ISGAMMA 1			/* -DGAMMA=\"gamma\" supplied */
+
+#if IMAGEMETHOD == 1			/* for dvipng... */
+  #define GAMMA DVIPNGGAMMA		/* ...default gamma is 2.5 */
+#elif IMAGEMETHOD == 2		/* for convert... */
+  #define GAMMA CONVERTGAMMA		/* ...default gamma is 0.5 */
+#else					/* otherwise... */
+  #define GAMMA "1.0"			/* ...default gamma is 1.0 */
 #endif
-static	char gamma[256] = GAMMA;	/* -gamma arg for convert() */
+
 /* ---
  * latex -halt-on-error or quiet
  * ----------------------------- */
@@ -698,7 +694,9 @@ mathtex_object_t *mathtex_object_ctor(request_rec *r) {
     mathtex_showmsg(__FILE__, __LINE__, 2, "mathtex_object_t", "initialized", o);
     
     o->latexwrapper = mathtex_get_latexwrapper(o->isdepth, o);
-    
+    o->gamma_size = 256;
+    o->gamma = apr_pcalloc(r->pool, o->gamma_size);
+    strncpy(o->gamma, DVIPNGGAMMA, o->gamma_size);
     return o;
 }
 
@@ -888,7 +886,7 @@ if ( ispicture ) {			/* set picture environment defaults*/
   o->imagemethod = 2;			/* must use convert, not dvipng */
   mathmode = 2;				/* must be in paragraph mode */
   o->isdepth = 0;				/* reset default in case it's true */
-  if ( !ISGAMMA ) strcpy(gamma,CONVERTGAMMA); /* default convert gamma */
+  strncpy(o->gamma, CONVERTGAMMA, o->gamma_size); /* default convert gamma */
   } /* --- end-of-if(ispicture) --- */
 
 /* ---
@@ -1013,17 +1011,19 @@ if ( strreplace(expression,"\\pdflatex","",0,0) >=   1 ) { /* remove \pdflatex *
 if ( strreplace(expression,"\\dvipng","",0,0) /*remove occurrences of \dvipng*/
 >=   1 ) {				/* found -dvipng in expression */
   o->imagemethod = 1;			/* set dvipng imagemethod */
-  if ( !ISGAMMA ) strcpy(gamma,DVIPNGGAMMA); } /* default dvipng gamma */
+  strncpy(o->gamma, DVIPNGGAMMA, o->gamma_size); /* default dvipng gamma */
+}
 if ( strreplace(expression,"\\dvips","",0,0) /* remove occurrences of -dvips*/
 >=   1 ) {				/* found -dvips in expression */
   o->imagemethod = 2;			/* set dvips/convert imagemethod */
-  if ( !ISGAMMA ) strcpy(gamma,CONVERTGAMMA); } /* default convert gamma */
+  strncpy(o->gamma, CONVERTGAMMA, o->gamma_size);/* default convert gamma */
+}
 /* --- check for convert/dvipng command's -density/-D parameter --- */
 if ( getdirective(expression,"\\density",1,1,1,density) /*look for \density*/
 ==   NULL )				/* no \density directive */
   getdirective(expression,"\\dpi",1,1,1,density); /* so try \dpi instead */
 /* --- check for convert command's \gammacorrection parameter --- */
-getdirective(expression,"\\gammacorrection",1,1,1,gamma); /*look for \gamma*/
+getdirective(expression,"\\gammacorrection",1,1,1,o->gamma); /*look for \gamma*/
 /* --- check for \cache or \nocache directive --- */
 if ( strreplace(expression,"\\cache","",0,0) /* remove \cache */
 >=   1 ) iscaching = 1;			/* cache this image */
@@ -1448,7 +1448,7 @@ if ( o->imagemethod == 1 ) {		/*dvipng method requested (default)*/
   /* --- replace %%dpi%% in dvipng arg template with actual dpi --- */
   strreplace(dvipngargs,"%%dpi%%",density,1,0);
   /* --- replace %%gamma%% in dvipng arg template with actual gamma --- */
-  strreplace(dvipngargs,"%%gamma%%",gamma,1,0);
+  strreplace(dvipngargs,"%%gamma%%",o->gamma,1,0);
   /* --- replace %%giffile%% in dvipng arg template with actual giffile --- */
   strreplace(dvipngargs,"%%giffile%%",giffile,1,0);
   /* ---
@@ -1524,7 +1524,7 @@ if ( o->imagemethod == 2 ) {		/* dvips/convert method requested */
   /* --- replace %%dpi%% in convert arg template with actual density --- */
   strreplace(convertargs,"%%dpi%%",density,1,0);
   /* --- replace %%gamma%% in convert arg template with actual gamma --- */
-  strreplace(convertargs,"%%gamma%%",gamma,1,0);
+  strreplace(convertargs,"%%gamma%%",o->gamma,1,0);
   /* ---
    * And run convert to convert .ps file to .gif/.png
    *-------------------------------------------------- */

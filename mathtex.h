@@ -114,6 +114,8 @@ typedef struct mathtex_object {
     int isdepth;
     char *query;
     char *latexwrapper;
+    char *gamma;
+    int gamma_size;
     mathtex_config_t *conf;
     request_rec *r;
     FILE *process_log_file;
