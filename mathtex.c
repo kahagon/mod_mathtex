@@ -5950,3 +5950,24 @@ while ( imagesz > 0 ) {			/* still need more bytes in image */
 return ( image );
 } /* --- end-of-function embeddedimages() --- */
 /* --- end-of-file mathtex.c --- */
+
+#ifdef MODCUTEST_ENABLED
+char* StrToUpper(char* str) {
+    char* p;
+    for (p = str ; *p ; ++p) *p = toupper(*p);
+    return str;
+}
+
+void TestStrToUpper(CuTest *tc, request_rec *r) {
+    char* input = apr_pstrdup(r->pool, "hello world");
+    char* actual = StrToUpper(input);
+    char* expected = "HELLO WORLD";
+    CuAssertStrEquals(tc, expected, actual);
+}
+
+CuSuite* CuGetSuite(void) {
+    CuSuite* suite = CuSuiteNew();
+    SUITE_ADD_TEST(suite, TestStrToUpper);
+    return suite;
+}
+#endif

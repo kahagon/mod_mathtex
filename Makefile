@@ -16,8 +16,8 @@ include $(top_srcdir)/build/special.mk
 #   additional defines, includes and libraries
 #DEFS=-Dmy_define=my_value
 #INCLUDES=-Imy/include/dir
-INCLUDES=`pkg-config --cflags apr-1` `apreq2-config --includes`
-LIBS = `pkg-config --libs apr-1` `apreq2-config --ldflags --includes` -lapreq2
+INCLUDES=`pkg-config --cflags apr-1` `apreq2-config --includes` $(modcutest_config_cflags)
+LIBS = `pkg-config --libs apr-1` `apreq2-config --ldflags --includes` -lapreq2 $(modcutest_config_libs)
 #LIBS=-Lmy/lib/dir -lmylib
 #WC =-Wc
 CFLAGS = $(INCLUDES) $(LIBS)
@@ -35,6 +35,8 @@ clean:
 #   simple test
 test: reload
 	lynx -mime_header http://localhost/mathtex
+
+refresh: clean all reload
 
 #   install and activate shared object by reloading Apache to
 #   force a reload of the shared object file

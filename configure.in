@@ -29,6 +29,11 @@ else
     AC_MSG_ERROR([apachectl is NOT found.])
 fi
 
+AC_CHECK_PROG([HAVE_MODCUTEST_CONFIG], [modcutest-config], [yes], [no])
+if test "$HAVE_MODCUTEST_CONFIG" = "yes"; then
+    MODCUTEST_CONFIG="modcutest-config"
+fi
+
 EXP_INSTALLBUILDDIR=`$APXS -q exp_installbuilddir`
 TOP_BUILDDIR="${EXP_INSTALLBUILDDIR}/../"
 TOP_SRCDIR=$TOP_BUILDDIR
@@ -36,9 +41,19 @@ TOP_SRCDIR=$TOP_BUILDDIR
 body="top_srcdir=$TOP_SRCDIR
 top_builddir=$TOP_BUILDDIR
 APXS=$APXS
-APACHECTL=$APACHECTL"
+APACHECTL=$APACHECTL
+modcutest_config_cflags=`$MODCUTEST_CONFIG --cflags`
+modcutest_config_libs=`$MODCUTEST_CONFIG --libs`"
 echo "$body" > definition.mk
 
+AC_ARG_ENABLE(
+    [modcutest], 
+    [  --enable-modcutest      compile with test code for modcutest.], 
+    [
+        AC_DEFINE(
+            [MODCUTEST_ENABLED], 
+            [], 
+            [enable test code for modcutest.])])
 
 # Checks for libraries.
 # FIXME: Replace `main' with a function in `-lapreq2':

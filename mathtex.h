@@ -8,6 +8,7 @@
 #ifndef MATHTEX_H
 #define	MATHTEX_H
 
+#include "config.h"
 #include <limits.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -19,6 +20,9 @@
 #include "apr_strings.h"
 #include "apr_file_io.h"
 #include <apreq_param.h>
+#ifdef MODCUTEST_ENABLED
+#include "ModCuTest.h"
+#endif
 
 #ifdef	__cplusplus
 extern "C" {
